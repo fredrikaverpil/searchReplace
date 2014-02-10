@@ -17,6 +17,7 @@ Features:
 
 
 ***Important notice:*** Use this application at your own risk!
-This application does NOT store the contents of all text files matching the search criteria locally or in the RAM. Instead, it opens the files and re-writes them. If there is a write error* - all data is lost. Be VERY careful when running this application.
 
-* There is a plan b whenever there is a write error (maybe the file is open or locked). The application will then attempt to write down a dump file next to the text file with suffix "_DUMP". If this also fails (out of disk space), all data is lost.
+This application does NOT store the contents of all text files matching the search criteria locally or in the RAM. Instead, it opens the files and re-writes them. If there is a write error - all data is lost. Be VERY careful when running this application.
+
+There is a plan b whenever there is a write error (maybe the file is open or locked). The application will then attempt to write down a dump file next to the text file with suffix "_DUMP". If this also fails (out of disk space), all data is lost.
