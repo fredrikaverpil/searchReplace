@@ -10,3 +10,5 @@ Features:
 * Search & Replace
 * In case of write error, a dump file will be created next to the original file with the original contents
 * Binary file detection (and option to skip these files)
+* Can run inside of Nuke, Maya as well as standalone
+* Tested on OS X, Windows
