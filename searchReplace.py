@@ -181,7 +181,7 @@ class SearchReplace(form, base):
 		#self.foundFiles = {}	 			# Main dictionary
 		self.unCheckableFiles = []			# Store all files that we were unable to read
 
-		self.lineEdit_startDir.setText( os.path.dirname(__file__x) )
+		self.lineEdit_startDir.setText( os.path.dirname(__file__) )
 		
 
 		self.pushButton_browse.clicked.connect( self.browseStartingDir ) # Click on browse button
