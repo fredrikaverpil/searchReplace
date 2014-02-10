@@ -16,5 +16,5 @@ Features:
 * Tested on OS X, Windows
 
 
-Important notice: Use this application at your own risk!
+***Important notice:*** Use this application at your own risk!
 This application does NOT store the contents of all text files matching the search criteria locally or in the RAM. Instead, it opens the files and re-writes them. If there is a write error and plan b (writing a dump file with a other name than the original file) won't work - all data is lost. Be VERY careful when running this application.
