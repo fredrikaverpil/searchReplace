@@ -204,8 +204,24 @@ class SearchReplace(form, base):
 		textchars = ''.join(map(chr, [7,8,9,10,12,13,27] + range(0x20, 0x100)))
 		is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
 
+		# Starting directory
 		startDirectory = self.lineEdit_startDir.text()
+
+		# Status message		
+		msg = 'Starting indexing of ' + startDirectory
+		self.statusBar().showMessage( msg )
+		self.log( msg )
+		QtGui.QApplication.processEvents()
+		
+
+		
 		for dirname, dirs, files in os.walk( startDirectory ):
+
+			# Status message		
+			msg = 'Indexing ' + dirname
+			self.statusBar().showMessage( msg )
+			QtGui.QApplication.processEvents()
+
 			for filename in files:
 				filepath = os.path.join(dirname, filename)
 				# Are we excluding binary files?
@@ -219,6 +235,13 @@ class SearchReplace(form, base):
 				else:
 					self.filesToSearch.append( filepath )
 
+		# Status message		
+		msg = 'Indexing completed'
+		self.statusBar().showMessage( msg )
+		self.log( msg )
+		QtGui.QApplication.processEvents()
+			
+
 		fileCount = 1
 		for filepath in self.filesToSearch:
 			self.statusBar().showMessage( 'Searching file (' + str(fileCount) + '/' + str(len(self.filesToSearch)) + '): ' + filepath )
@@ -228,11 +251,11 @@ class SearchReplace(form, base):
 
 
 		if len(self.unCheckableFiles) == 0:
-			msg ='Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches.'
+			msg ='Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' files with search phrase.'
 			self.log( msg )
 			self.statusBar().showMessage( msg )
 		else:
-			msg = 'Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches, but some files could not be read (check console output).'
+			msg = 'Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' files with search phrase, but some files could not be read (maybe they were open/locked or of certain unicode type).'
 			self.log( msg )
 			self.statusBar().showMessage( msg )
 
@@ -264,7 +287,7 @@ class SearchReplace(form, base):
 
 		except:
 			self.unCheckableFiles.append( filepath )
-			msg = 'Unable to read ' + filepath
+			msg = 'Error: Unable to read ' + filepath
 			self.log( msg )
 			self.statusBar().showMessage( msg )
 
@@ -285,7 +308,7 @@ class SearchReplace(form, base):
 			self.statusBar().showMessage('Error: Start dir does not exist!')
 			return False
 		else:
-			msg = 'Start search for: ' + str(self.lineEdit_find.text())
+			msg = 'Start search for: ' + str(self.lineEdit_find.text()) + ' in ' + str(self.lineEdit_startDir.text())
 			self.log( msg )
 			self.preProcess()
 			return True
@@ -362,8 +385,7 @@ class SearchReplace(form, base):
 			startingDir = ''
 		destDir = QtGui.QFileDialog.getExistingDirectory(None, 'Open working directory', startingDir, QtGui.QFileDialog.ShowDirsOnly)
 		self.lineEdit_startDir.setText( destDir )
-		msg = 'Directory set to: ' + destDir
-		self.log( msg )
+		
 
 
 	def showStrings(self):
