@@ -7,7 +7,7 @@
 import os, sys
 import xml.etree.ElementTree as xml
 from cStringIO import StringIO	
-
+import datetime
 
 
 ''' CONFIGURATION '''
@@ -227,10 +227,18 @@ class SearchReplace(form, base):
 			fileCount += 1
 
 
+		if len(self.unCheckableFiles) == 0:
+			msg ='Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches.'
+			self.log( msg )
+			self.statusBar().showMessage( msg )
+		else:
+			msg = 'Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches, but some files could not be read (check console output).'
+			self.log( msg )
+			self.statusBar().showMessage( msg )
+
+
 
 	def searchFile(self, filepath):
-		
-
 		# Read contents of file
 		with open(filepath, "r") as f:
 			contents = f.read()
@@ -256,17 +264,17 @@ class SearchReplace(form, base):
 
 		except:
 			self.unCheckableFiles.append( filepath )
-			print 'Unable to read ' + filepath
+			msg = 'Unable to read ' + filepath
+			self.log( msg )
+			self.statusBar().showMessage( msg )
 
 
 
-		if len(self.unCheckableFiles) == 0:
-			self.statusBar().showMessage('Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches.' )
-		else:
-			self.statusBar().showMessage('Done Searching ' + str(len(self.filesToSearch)) + ' files. Found ' + str(len( self.foundFiles.keys() )) + ' matches, but some files could not be read (check console output).')
+
 
 
 	def justSearch(self):
+
 		if self.lineEdit_find.text() == '':
 			self.statusBar().showMessage('Error: No search phrase!')
 			return False
@@ -277,6 +285,8 @@ class SearchReplace(form, base):
 			self.statusBar().showMessage('Error: Start dir does not exist!')
 			return False
 		else:
+			msg = 'Start search for: ' + str(self.lineEdit_find.text())
+			self.log( msg )
 			self.preProcess()
 			return True
 
@@ -286,7 +296,8 @@ class SearchReplace(form, base):
 				self.statusBar().showMessage('Error: No replace phrase!')
 		else:
 			# TO DO - ASK BEFORE!
-			reply = QtGui.QMessageBox.question(self, 'Message', "Are you sure?!!!", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+			msg = 'Make sure you have made a backup of the directory you are running this script on!\n\nYou are about to start the search and replace process.\n\nContinue?'
+			reply = QtGui.QMessageBox.question(self, 'Message', msg, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 			if reply == QtGui.QMessageBox.Yes:
 				self.performReplace()
 
@@ -297,7 +308,8 @@ class SearchReplace(form, base):
 				self.statusBar().showMessage('Error: No replace phrase!')
 		else:
 			if self.justSearch():
-
+				msg = 'Start replace with: ' + str(self.lineEdit_replace.text())
+				self.log( msg )
 				
 				fileProcessedCount = 1
 				for filepath in self.foundFiles.keys():
@@ -319,20 +331,28 @@ class SearchReplace(form, base):
 								fw.write(newContents)
 								writtenFile = True
 							except:
-								print "Error: unable to write " + filepath
+								msg = 'Error: unable to write ' + filepath
+								self.log( msg )
+								self.statusBar().showMessage( msg )
 							# In the case where the file is locked or cannot be written - Attempt to write to a back up dump file
 							if not writtenFile:
 								try:
-									dumpfilepath = filepath+'_BACKUP'
+									dumpfilepath = filepath+'_DUMP'
 									with open(dumpfilepath, 'w') as dumpfile:
 										dumpfile.write(originalContents)
-										print 'Dump file was written: ' + dumpfilepath
+										msg = 'Dump file was written: ' + dumpfilepath
+										self.log( msg )
+										self.statusBar().showMessage( msg )
 								except:
-									print 'Severe error: Possible loss of data!'
+									msg = 'Severe error: Possible loss of data!'
+									self.log( msg )
+									self.statusBar().showMessage( msg )
 
 					fileProcessedCount += 1
 
-		self.statusBar().showMessage('Done writing ' + str(fileProcessedCount-1) + ' files')
+		msg = 'Done writing ' + str(fileProcessedCount-1) + ' files'
+		self.log( msg )
+		self.statusBar().showMessage( msg )
 
 
 	def browseStartingDir(self):
@@ -342,6 +362,8 @@ class SearchReplace(form, base):
 			startingDir = ''
 		destDir = QtGui.QFileDialog.getExistingDirectory(None, 'Open working directory', startingDir, QtGui.QFileDialog.ShowDirsOnly)
 		self.lineEdit_startDir.setText( destDir )
+		msg = 'Directory set to: ' + destDir
+		self.log( msg )
 
 
 	def showStrings(self):
@@ -355,6 +377,11 @@ class SearchReplace(form, base):
 		except:
 			pass
 
+
+	def log(self, message):
+		timeStamp = str(datetime.datetime.now())
+		with open( os.path.join( os.path.dirname(__file__), 'searchReplace.log'), 'a' ) as myfile:
+			myfile.write( timeStamp + '\t\t' + message + '\n')
 
 
 
