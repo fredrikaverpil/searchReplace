@@ -7,7 +7,7 @@
 import os, sys
 import xml.etree.ElementTree as xml
 from cStringIO import StringIO	
-import datetime
+import datetime, socket, fnmatch
 
 
 ''' CONFIGURATION '''
@@ -192,13 +192,24 @@ class SearchReplace(form, base):
 		self.listWidget_files.currentItemChanged.connect( self.showStrings ) # Click on filepath in listWidget
 	
 
+	def parseFiletypes(self, filetypesString):
+		filetypesStringModified = filetypesString.replace(' ', '')	# Remove space
+		filetypesList = filetypesStringModified.split(',') # Split to list on comma
+		return filetypesList
+
+
+
+
 	def preProcess(self):
-		# Create and clear lists
+		# Create and clear lists and resets
 		self.filesToSearch = []
 		self.foundFiles = {}
-
-		# Clear lists
 		self.listWidget_files.clear()
+		if self.lineEdit_filetypes.text() == '':
+			self.lineEdit_filetypes.setText('*.*')
+			QtGui.QApplication.processEvents()
+		
+		
 
 		# Binary check inits
 		textchars = ''.join(map(chr, [7,8,9,10,12,13,27] + range(0x20, 0x100)))
@@ -214,26 +225,34 @@ class SearchReplace(form, base):
 		QtGui.QApplication.processEvents()
 		
 
+		# If filetype filter is active, make it clear which files to include
+		filetypes = self.parseFiletypes( self.lineEdit_filetypes.text() )
+		msg = 'Limiting search to filetypes ' + self.lineEdit_filetypes.text()
+		self.log( msg )
+
+
 		
-		for dirname, dirs, files in os.walk( startDirectory ):
+		for root, dirs, files in os.walk( startDirectory ):
 
 			# Status message		
-			msg = 'Indexing ' + dirname
+			msg = 'Indexing ' + root
 			self.statusBar().showMessage( msg )
 			QtGui.QApplication.processEvents()
 
-			for filename in files:
-				filepath = os.path.join(dirname, filename)
-				# Are we excluding binary files?
-				if self.checkBox_skipBinary.isChecked():
-					if os.path.isfile( filepath ):
-						if is_binary_string(open( filepath ).read(1024)):
-							# File is binary, do not do anything
-							pass
-						else:
-							self.filesToSearch.append( filepath )
-				else:
-					self.filesToSearch.append( filepath )
+			for extension in ( tuple(filetypes) ):
+				for filename in fnmatch.filter(files, extension):
+
+					filepath = os.path.join(root, filename)
+					# Are we excluding binary files?
+					if self.checkBox_skipBinary.isChecked():
+						if os.path.isfile( filepath ):
+							if is_binary_string(open( filepath ).read(1024)):
+								# File is binary, do not do anything
+								pass
+							else:
+								self.filesToSearch.append( filepath )
+					else:
+						self.filesToSearch.append( filepath )
 
 		# Status message		
 		msg = 'Indexing completed'
@@ -266,7 +285,7 @@ class SearchReplace(form, base):
 		with open(filepath, "r") as f:
 			contents = f.read()
 
-		searchString = str(self.lineEdit_find.text())	# Get search string from UI
+		searchString = str( self.lineEdit_find.text() )	# Get search string from UI
 
 		# Add file to list if search string was found in file
 		try:
@@ -403,7 +422,7 @@ class SearchReplace(form, base):
 	def log(self, message):
 		timeStamp = str(datetime.datetime.now())
 		with open( os.path.join( os.path.dirname(__file__), 'searchReplace.log'), 'a' ) as myfile:
-			myfile.write( timeStamp + '\t\t' + message + '\n')
+			myfile.write( timeStamp + '\t\t' + str(socket.gethostname()) + '\t\t' + message + '\n')
 
 
 
