@@ -8,7 +8,7 @@ Requirements: Python, Pyside/PyQt (configure this in searchReplace.py)
 Features:
 * Search
 * Search & Replace
-* Filetype filtering
+* Filetype/filename filtering
 * Records the row(s) of the text file containing the search string - optionally disable this
 * Designed to be easy on RAM, to be used on enormous projects containing a large number of text files
 * In case of write error, a dump file will be created next to the original file with the original contents
