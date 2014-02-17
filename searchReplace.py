@@ -179,9 +179,8 @@ class SearchReplace(form, base):
 		self.statusBar().showMessage('I\'m ready for action')
 
 		self.buttonTitleJustSearch = 'Just search'
-		self.buttonTitleJustSearchStop = 'Stop search'
 		self.buttonTitleSearchReplace = 'Search and replace'
-		self.buttonTitleSearchReplaceStop = 'Stop search and replace'
+		self.buttonTitleStop = 'Stop'
 		self.running = False
 		self.abort = False
 
@@ -201,14 +200,15 @@ class SearchReplace(form, base):
 
 
 	def reset(self):
+		print self.sender().text()
 		# Change button to default value
-		if self.sender().text() == self.buttonTitleJustSearchStop:
+		if self.sender().text() == self.buttonTitleStop:
 			self.pushButton_find.setText( self.buttonTitleJustSearch )
-			self.pushButton_replace.setEnabled(True)
-		elif self.sender().text() == self.buttonTitleSearchReplaceStop:
 			self.pushButton_replace.setText( self.buttonTitleSearchReplace )
+			self.pushButton_replace.setEnabled(True)
 			self.pushButton_find.setEnabled(True)
-		self.abort = False
+			
+		
 
 
 	def pushButtonJustSearch(self):
@@ -216,12 +216,13 @@ class SearchReplace(form, base):
 			pass
 		else:
 			sender = self.sender().text()
-			self.pushButton_find.setText( self.buttonTitleJustSearchStop )
+			self.pushButton_find.setText( self.buttonTitleStop )
 			self.pushButton_replace.setEnabled(False)
 			if sender == self.buttonTitleJustSearch:
 				self.justSearch()
 				self.reset()
-			elif sender == self.buttonTitleJustSearchStop:
+				self.abort = False
+			elif sender == self.buttonTitleStop:
 				QtGui.QApplication.processEvents()
 				self.abort = True
 				QtGui.QApplication.processEvents()
@@ -243,11 +244,12 @@ class SearchReplace(form, base):
 				msg = 'Make sure you have made a backup of the directory you are running this script on!\n\nYou are about to start the search and replace process.\n\nContinue?'
 				reply = QtGui.QMessageBox.question(self, 'Message', msg, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 				if reply == QtGui.QMessageBox.Yes:
-					self.pushButton_replace.setText( self.buttonTitleSearchReplaceStop )
+					self.pushButton_replace.setText( self.buttonTitleStop )
 					self.pushButton_find.setEnabled(False)
 					self.performReplace()
 					self.reset()
-			elif sender == self.buttonTitleSearchReplaceStop:
+					self.abort = False
+			elif sender == self.buttonTitleStop:
 				QtGui.QApplication.processEvents()
 				self.abort = True
 				QtGui.QApplication.processEvents()
@@ -412,6 +414,7 @@ class SearchReplace(form, base):
 
 
 
+
 	def justSearch(self):
 		if self.lineEdit_find.text() == '':
 			self.statusBar().showMessage('Error: No search phrase!')
@@ -482,6 +485,7 @@ class SearchReplace(form, base):
 											self.statusBar().showMessage( msg )
 
 						fileProcessedCount += 1
+
 
 		msg = 'Done writing ' + str(fileProcessedCount-1) + ' files'
 		self.log( msg )
