@@ -178,6 +178,13 @@ class SearchReplace(form, base):
 		self.statusBar()
 		self.statusBar().showMessage('I\'m ready for action')
 
+		self.buttonTitleJustSearch = 'Just search'
+		self.buttonTitleJustSearchStop = 'Stop search'
+		self.buttonTitleSearchReplace = 'Search and replace'
+		self.buttonTitleSearchReplaceStop = 'Stop search and replace'
+		self.running = False
+		self.abort = False
+
 		#self.foundFiles = {}	 			# Main dictionary
 		self.unCheckableFiles = []			# Store all files that we were unable to read
 
@@ -185,12 +192,92 @@ class SearchReplace(form, base):
 		
 
 		self.pushButton_browse.clicked.connect( self.browseStartingDir ) # Click on browse button
-		self.pushButton_find.clicked.connect( self.justSearch ) # Click on search button
-		self.pushButton_replace.clicked.connect( self.askBeforeReplace ) # Click on replace button
+		self.pushButton_find.clicked.connect( self.pushButtonJustSearch ) # Click on search button
+		self.pushButton_replace.clicked.connect( self.pushButtonSearchReplace ) # Click on replace button
 		
 
 		self.listWidget_files.currentItemChanged.connect( self.showStrings ) # Click on filepath in listWidget
-	
+
+
+
+	def reset(self):
+		# Change button to default value
+		if self.sender().text() == self.buttonTitleJustSearchStop:
+			self.pushButton_find.setText( self.buttonTitleJustSearch )
+			self.pushButton_replace.setEnabled(True)
+		elif self.sender().text() == self.buttonTitleSearchReplaceStop:
+			self.pushButton_replace.setText( self.buttonTitleSearchReplace )
+			self.pushButton_find.setEnabled(True)
+		self.abort = False
+
+
+	def pushButtonJustSearch(self):
+		if self.checkForErrorsJustSearch():
+			pass
+		else:
+			sender = self.sender().text()
+			self.pushButton_find.setText( self.buttonTitleJustSearchStop )
+			self.pushButton_replace.setEnabled(False)
+			if sender == self.buttonTitleJustSearch:
+				self.justSearch()
+				self.reset()
+			elif sender == self.buttonTitleJustSearchStop:
+				QtGui.QApplication.processEvents()
+				self.abort = True
+				QtGui.QApplication.processEvents()
+				msg = 'User interrupt!'
+				print msg
+				self.log( msg )
+
+		
+
+
+	def pushButtonSearchReplace(self):
+		if self.checkForErrorsJustSearch() or self.checkForErrorsSearchReplace():
+			pass
+		else:
+			sender = self.sender().text()
+			if sender == self.buttonTitleSearchReplace:
+				
+				# TO DO - ASK BEFORE!
+				msg = 'Make sure you have made a backup of the directory you are running this script on!\n\nYou are about to start the search and replace process.\n\nContinue?'
+				reply = QtGui.QMessageBox.question(self, 'Message', msg, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+				if reply == QtGui.QMessageBox.Yes:
+					self.pushButton_replace.setText( self.buttonTitleSearchReplaceStop )
+					self.pushButton_find.setEnabled(False)
+					self.performReplace()
+					self.reset()
+			elif sender == self.buttonTitleSearchReplaceStop:
+				QtGui.QApplication.processEvents()
+				self.abort = True
+				QtGui.QApplication.processEvents()
+				msg = 'User interrupt!'
+				print msg
+				self.log( msg )
+
+
+
+	def checkForErrorsJustSearch(self):
+		error = False
+
+		if self.lineEdit_find.text() == '':
+			self.statusBar().showMessage('Error: No search phrase!')
+			error = True
+		elif self.lineEdit_startDir.text() == '':
+			self.statusBar().showMessage('Error: No start dir!')
+			error = True
+		elif not os.path.isdir( self.lineEdit_startDir.text() ):
+			self.statusBar().showMessage('Error: Start dir does not exist!')
+			error = True
+		return error
+
+	def checkForErrorsSearchReplace(self):
+		error = False
+		if self.lineEdit_replace.text() == '':
+			self.statusBar().showMessage('Error: No replace phrase!')
+			error = True
+		return error
+
 
 	def parseFiletypes(self, filetypesString):
 		filetypesStringModified = filetypesString.replace(' ', '')	# Remove space
@@ -200,7 +287,7 @@ class SearchReplace(form, base):
 
 
 
-	def preProcess(self):
+	def preProcess(self): 
 		# Create and clear lists and resets
 		self.filesToSearch = []
 		self.foundFiles = {}
@@ -234,25 +321,29 @@ class SearchReplace(form, base):
 		
 		for root, dirs, files in os.walk( startDirectory ):
 
-			# Status message		
-			msg = 'Indexing ' + root
-			self.statusBar().showMessage( msg )
-			QtGui.QApplication.processEvents()
+			if not self.abort:
 
-			for extension in ( tuple(filetypes) ):
-				for filename in fnmatch.filter(files, extension):
+				# Status message		
+				msg = 'Indexing ' + root
+				self.statusBar().showMessage( msg )
+				QtGui.QApplication.processEvents()
 
-					filepath = os.path.join(root, filename)
-					# Are we excluding binary files?
-					if self.checkBox_skipBinary.isChecked():
-						if os.path.isfile( filepath ):
-							if is_binary_string(open( filepath ).read(1024)):
-								# File is binary, do not do anything
-								pass
+				for extension in ( tuple(filetypes) ):
+
+					for filename in fnmatch.filter(files, extension):
+
+							filepath = os.path.join(root, filename)
+							# Are we excluding binary files?
+							if self.checkBox_skipBinary.isChecked():
+								if os.path.isfile( filepath ):
+									if is_binary_string(open( filepath ).read(1024)):
+										# File is binary, do not do anything
+										pass
+									else:
+										if not self.abort:
+											self.filesToSearch.append( filepath )
 							else:
 								self.filesToSearch.append( filepath )
-					else:
-						self.filesToSearch.append( filepath )
 
 		# Status message		
 		msg = 'Indexing completed'
@@ -263,10 +354,11 @@ class SearchReplace(form, base):
 
 		fileCount = 1
 		for filepath in self.filesToSearch:
-			self.statusBar().showMessage( 'Searching file (' + str(fileCount) + '/' + str(len(self.filesToSearch)) + '): ' + filepath )
-			QtGui.QApplication.processEvents()									# Force update UI
-			self.searchFile( filepath )
-			fileCount += 1
+			if not self.abort:
+				self.statusBar().showMessage( 'Searching file (' + str(fileCount) + '/' + str(len(self.filesToSearch)) + '): ' + filepath )
+				QtGui.QApplication.processEvents()									# Force update UI
+				self.searchFile( filepath )
+				fileCount += 1
 
 
 		if len(self.unCheckableFiles) == 0:
@@ -280,35 +372,40 @@ class SearchReplace(form, base):
 
 
 
+		
+
+
+
 	def searchFile(self, filepath):
-		# Read contents of file
-		with open(filepath, "r") as f:
-			contents = f.read()
+		if not self.abort:
+			# Read contents of file
+			with open(filepath, "r") as f:
+				contents = f.read()
 
-		searchString = str( self.lineEdit_find.text() )	# Get search string from UI
+			searchString = str( self.lineEdit_find.text() )	# Get search string from UI
 
-		# Add file to list if search string was found in file
-		try:
-			if searchString in contents:
-				self.listWidget_files.addItem( filepath )						# Add file to listWidget
-				QtGui.QApplication.processEvents()								# Force update UI
-				
-				lines = ''
-				for line in contents.split('\n'):
-						if searchString in line:
-							lines += line + '\n'
+			# Add file to list if search string was found in file
+			try:
+				if searchString in contents:
+					self.listWidget_files.addItem( filepath )						# Add file to listWidget
+					QtGui.QApplication.processEvents()								# Force update UI
+					
+					lines = ''
+					for line in contents.split('\n'):
+							if searchString in line:
+								lines += line + '\n'
 
-				if not self.checkBox_noRecording.isChecked():
-					self.foundFiles[ filepath ] = lines		# Create entry, record line
-				else:
-					self.foundFiles[ filepath ] = ''		# Create entry, do not record line
+					if not self.checkBox_noRecording.isChecked():
+						self.foundFiles[ filepath ] = lines		# Create entry, record line
+					else:
+						self.foundFiles[ filepath ] = ''		# Create entry, do not record line
 
 
-		except:
-			self.unCheckableFiles.append( filepath )
-			msg = 'Error: Unable to read ' + filepath
-			self.log( msg )
-			self.statusBar().showMessage( msg )
+			except:
+				self.unCheckableFiles.append( filepath )
+				msg = 'Error: Unable to read ' + filepath
+				self.log( msg )
+				self.statusBar().showMessage( msg )
 
 
 
@@ -316,7 +413,6 @@ class SearchReplace(form, base):
 
 
 	def justSearch(self):
-
 		if self.lineEdit_find.text() == '':
 			self.statusBar().showMessage('Error: No search phrase!')
 			return False
@@ -333,15 +429,6 @@ class SearchReplace(form, base):
 			return True
 
 
-	def askBeforeReplace(self):
-		if self.lineEdit_replace.text() == '':
-				self.statusBar().showMessage('Error: No replace phrase!')
-		else:
-			# TO DO - ASK BEFORE!
-			msg = 'Make sure you have made a backup of the directory you are running this script on!\n\nYou are about to start the search and replace process.\n\nContinue?'
-			reply = QtGui.QMessageBox.question(self, 'Message', msg, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-			if reply == QtGui.QMessageBox.Yes:
-				self.performReplace()
 
 
 
@@ -349,6 +436,7 @@ class SearchReplace(form, base):
 		if self.lineEdit_replace.text() == '':
 				self.statusBar().showMessage('Error: No replace phrase!')
 		else:
+
 			if self.justSearch():
 				msg = 'Start replace with: ' + str(self.lineEdit_replace.text())
 				self.log( msg )
@@ -356,41 +444,44 @@ class SearchReplace(form, base):
 				fileProcessedCount = 1
 				for filepath in self.foundFiles.keys():
 
-					self.statusBar().showMessage('Reading (' + str(fileProcessedCount) + '/' + str(len( self.foundFiles.keys() )) + '): ' + filepath )
-					QtGui.QApplication.processEvents()
+					if not self.abort:
+						self.statusBar().showMessage('Reading (' + str(fileProcessedCount) + '/' + str(len( self.foundFiles.keys() )) + '): ' + filepath )
+						QtGui.QApplication.processEvents()
 
-					# Open the file as readable
-					with open(filepath, 'r') as fr:
-						originalContents = fr.read()
+						# Open the file as readable
+						with open(filepath, 'r') as fr:
+							originalContents = fr.read()
 
-					if str(self.lineEdit_find.text()) in originalContents:
-						newContents = originalContents.replace( str(self.lineEdit_find.text()) , str(self.lineEdit_replace.text()) )
-						with open(filepath, 'w') as fw:
-							writtenFile = False
-							try:
-								self.statusBar().showMessage('Writing (' + str(fileProcessedCount) + '/' + str(len( self.foundFiles.keys() )) + '): ' + filepath )
-								QtGui.QApplication.processEvents()
-								fw.write(newContents)
-								writtenFile = True
-							except:
-								msg = 'Error: unable to write ' + filepath
-								self.log( msg )
-								self.statusBar().showMessage( msg )
-							# In the case where the file is locked or cannot be written - Attempt to write to a back up dump file
-							if not writtenFile:
-								try:
-									dumpfilepath = filepath+'_DUMP'
-									with open(dumpfilepath, 'w') as dumpfile:
-										dumpfile.write(originalContents)
-										msg = 'Dump file was written: ' + dumpfilepath
+						if str(self.lineEdit_find.text()) in originalContents:
+							newContents = originalContents.replace( str(self.lineEdit_find.text()) , str(self.lineEdit_replace.text()) )
+							
+							if not self.abort:
+								with open(filepath, 'w') as fw:
+									writtenFile = False
+									try:
+										self.statusBar().showMessage('Writing (' + str(fileProcessedCount) + '/' + str(len( self.foundFiles.keys() )) + '): ' + filepath )
+										QtGui.QApplication.processEvents()
+										fw.write(newContents)
+										writtenFile = True
+									except:
+										msg = 'Error: unable to write ' + filepath
 										self.log( msg )
 										self.statusBar().showMessage( msg )
-								except:
-									msg = 'Severe error: Possible loss of data!'
-									self.log( msg )
-									self.statusBar().showMessage( msg )
+									# In the case where the file is locked or cannot be written - Attempt to write to a back up dump file
+									if not writtenFile:
+										try:
+											dumpfilepath = filepath+'_DUMP'
+											with open(dumpfilepath, 'w') as dumpfile:
+												dumpfile.write(originalContents)
+												msg = 'Dump file was written: ' + dumpfilepath
+												self.log( msg )
+												self.statusBar().showMessage( msg )
+										except:
+											msg = 'Severe error: Possible loss of data!'
+											self.log( msg )
+											self.statusBar().showMessage( msg )
 
-					fileProcessedCount += 1
+						fileProcessedCount += 1
 
 		msg = 'Done writing ' + str(fileProcessedCount-1) + ' files'
 		self.log( msg )
