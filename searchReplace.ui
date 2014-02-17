@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1037</width>
-    <height>778</height>
+    <width>745</width>
+    <height>637</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -61,6 +61,18 @@
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="2">
         <widget class="QPushButton" name="pushButton_browse">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>150</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="text">
           <string>Browse...</string>
          </property>
@@ -78,6 +90,18 @@
        </item>
        <item row="7" column="2">
         <widget class="QPushButton" name="pushButton_find">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>150</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="text">
           <string>Just search</string>
          </property>
@@ -105,6 +129,18 @@
        </item>
        <item row="8" column="2">
         <widget class="QPushButton" name="pushButton_replace">
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>150</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="text">
           <string>Search and replace</string>
          </property>
@@ -171,17 +207,14 @@
    </layout>
    <zorder>widget</zorder>
    <zorder>widget_2</zorder>
-   <zorder>label_3</zorder>
-   <zorder>widget_4</zorder>
-   <zorder>widget_3</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1037</width>
-     <height>18</height>
+     <width>745</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>
