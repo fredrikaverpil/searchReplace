@@ -561,14 +561,12 @@ def runNuke():
 		moduleName = ''
 	else:
 		moduleName = moduleName + '.'
-
+	global gui
 	if launchAsPanel:
 		pane = nuke.getPaneFor('Properties.1')
 		panel = panels.registerWidgetAsPanel( moduleName + 'SearchReplace' , windowTitle, ('uk.co.thefoundry.'+windowObject+'Window'), True).addToPane(pane) # View pane and add it to panes menu
-		global gui
 		gui = panel.customKnob.getObject().widget
 	else:
-		global gui
 		gui = SearchReplace()
 		gui.show()
 
